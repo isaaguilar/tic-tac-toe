@@ -130,6 +130,7 @@ if __name__ == "__main__":
                                 stdscr.addstr(8,0, str(next_move) + " is already in use")
                                 next_move = 0
                         except:
+                            play_again = False
                             if usr_input.lower().startswith("q"):
                                 raise TypeError("Quitting now...")
 
