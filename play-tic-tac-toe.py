@@ -16,37 +16,44 @@ def refresh_gameboard(placement):
     stdscr.addstr(0, 0, gameboard.format(*placement))
 
 
-def set_ai_choices(user,opts,in_use, ai_choice):
-    if len(user) == 3:
+def ai_options(user_spaces, opts,in_use, ai_choice):
+    occupied_spaces = [x for x in in_use if x in opts]
+    
+    # Check if the user has won
+    if len(user_spaces) == 3:
         ai_choice.append(0)
-    elif len(user) == 2:
+        return
+    # Check if computer has won
+    elif len(user_spaces) == 0 and len(occupied_spaces)==3:
+        ai_choice.append(-1)  
+        return
+    # Defensive Options    
+    if len(user_spaces) == 2:
         for item in opts:
-            if item not in user and item not in in_use:
+            # if item not in user_spaces and item not in in_use:
+            if item not in occupied_spaces:
                 ai_choice.append(item)
-    elif set(opts) < set(in_use) and len(user) == 0:
-        ai_choice.append(-1)
+    # Offensive Options
+    elif len(user_spaces) == 0 and len(occupied_spaces) == 2:
+        for item in opts:
+            if item not in occupied_spaces:
+                ai_choice.append(10 + item)
+    elif len(user_spaces) == 0 and len(occupied_spaces) == 1:
+        for item in opts:
+            if item not in occupied_spaces:
+                ai_choice.append(20 + item)
     
 
 def do_thinking(in_use_by_user, in_use):
-
     ai_choice = []
-    
-    col1 = [1, 4, 7]
-    ucol1 = []
-    col2 = [2, 5, 8]
-    ucol2 = []
-    col3 = [3, 6, 9]
-    ucol3 = []
-    row1 = [1, 2, 3]
-    urow1 = []
-    row2 = [4, 5, 6]
-    urow2 = []
-    row3 = [7, 8, 9]
-    urow3 = []
-    diag1 = [1, 5, 9]
-    udiag1 = []
-    diag2 = [3, 5, 7]
-    udiag2 = []
+    col1 = [1, 4, 7]; ucol1 = []
+    col2 = [2, 5, 8]; ucol2 = []
+    col3 = [3, 6, 9]; ucol3 = []
+    row1 = [1, 2, 3]; urow1 = []
+    row2 = [4, 5, 6]; urow2 = []
+    row3 = [7, 8, 9]; urow3 = []
+    diag1 = [1, 5, 9]; udiag1 = []
+    diag2 = [3, 5, 7]; udiag2 = []
 
     for item in in_use_by_user:
         if item == 1:
@@ -83,16 +90,37 @@ def do_thinking(in_use_by_user, in_use):
             urow3.append(item)
             udiag1.append(item)
 
-    set_ai_choices(ucol1, col1, in_use, ai_choice)
-    set_ai_choices(ucol2, col2, in_use, ai_choice)
-    set_ai_choices(ucol3, col3, in_use, ai_choice)
-    set_ai_choices(urow1, row1, in_use, ai_choice)
-    set_ai_choices(urow2, row2, in_use, ai_choice)
-    set_ai_choices(urow3, row3, in_use, ai_choice)
-    set_ai_choices(udiag1, diag1, in_use, ai_choice)
-    set_ai_choices(udiag2, diag2, in_use, ai_choice)
+    if len(in_use) == 1:
+        if 5 in in_use:
+            ai_choice.append(1)
+            ai_choice.append(3)
+            ai_choice.append(7)
+            ai_choice.append(9)
+        else:
+            ai_choice.append(5)
+        return ai_choice
 
+    ai_options(ucol1, col1, in_use, ai_choice)
+    ai_options(ucol2, col2, in_use, ai_choice)
+    ai_options(ucol3, col3, in_use, ai_choice)
+    ai_options(urow1, row1, in_use, ai_choice)
+    ai_options(urow2, row2, in_use, ai_choice)
+    ai_options(urow3, row3, in_use, ai_choice)
+    ai_options(udiag1, diag1, in_use, ai_choice)
+    ai_options(udiag2, diag2, in_use, ai_choice)
     return ai_choice
+
+
+def end_game(ai_choice):
+    if 0 in ai_choice:
+        stdscr.addstr(0, 0, "           You win!")
+        stdscr.refresh()
+        return True
+    if -1 in ai_choice:
+        stdscr.addstr(0, 0, "           You lose")
+        stdscr.refresh()
+        return True
+    return False 
 
 
 if __name__ == "__main__":
@@ -108,7 +136,7 @@ if __name__ == "__main__":
         refresh_gameboard(placement)
         try:
             for i in range(9):
-               
+                
                 # User's turn
                 if i % 2 == 0:
                     turn = "X" 
@@ -133,6 +161,11 @@ if __name__ == "__main__":
                             play_again = False
                             if usr_input.lower().startswith("q"):
                                 raise TypeError("Quitting now...")
+                    
+                    if i == 8:
+                        ai_choice = do_thinking(in_use_by_user, in_use)
+                        if end_game(ai_choice):
+                            break
 
                 # AI's turn
                 else:
@@ -144,11 +177,25 @@ if __name__ == "__main__":
                         in_use.append(next_move)
                         available.remove(next_move)
                     else:
-                        if 0 in ai_choice:
-                            stdscr.addstr(0, 0, "           You win!")
-                            stdscr.refresh()
+                        if end_game(ai_choice):
                             break
-                        next_move = random.choice(ai_choice)
+
+                        # Finish first, then attack if no defence needed
+                        defending_moves = [x for x in ai_choice if x < 10]
+                        finishing_moves = [x - 10 for x in ai_choice if 10 < x < 20]
+                        attacking_moves = [x - 20 for x in ai_choice if x > 20]
+                        
+                        if len(finishing_moves) > 0:
+                            next_move = random.choice(finishing_moves)
+                        elif len(defending_moves) > 0:
+                            strategic_defend = [x for x in defending_moves if x in attacking_moves]
+                            if len(strategic_defend) > 0:
+                                next_move = random.choice(defending_moves)
+                            else:
+                                next_move = random.choice(defending_moves)
+                        elif len(attacking_moves) > 0: 
+                            next_move = random.choice(attacking_moves)
+                        
                         in_use.append(next_move)
                         available.remove(next_move)
     
@@ -156,10 +203,8 @@ if __name__ == "__main__":
                 refresh_gameboard(placement)
                 
                 ai_choice = do_thinking(in_use_by_user, in_use)
-                if -1 in ai_choice:
-                    stdscr.addstr(0, 0, "           You lose")
+                if end_game(ai_choice):
                     break
-                    
                 
                 time.sleep(0.5)
             stdscr.addstr(7, 0, "Would you like to play again? (y/n) ")
@@ -173,6 +218,10 @@ if __name__ == "__main__":
             stdscr.addstr(9, 0, str(e))
             stdscr.refresh()
             time.sleep(1)
+        except ValueError as e:
+            stdscr.addstr(9,0, str(e))
+            stdscr.refresh()
+            time.sleep(5)
         finally:
             curses.nocbreak()
             curses.endwin()
