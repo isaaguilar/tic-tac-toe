@@ -16,16 +16,16 @@ def refresh_gameboard(placement, stdscr):
 
 def ai_options(user_spaces, opts, in_use, ai_choice):
     occupied_spaces = [x for x in in_use if x in opts]
-    
+
     # Check if the user has won
     if len(user_spaces) == 3:
         ai_choice.append(0)
         return
     # Check if computer has won
     elif len(user_spaces) == 0 and len(occupied_spaces) == 3:
-        ai_choice.append(-1)  
+        ai_choice.append(-1)
         return
-    # Defensive Options    
+    # Defensive Options
     if len(user_spaces) == 2:
         for item in opts:
             if item not in occupied_spaces:
@@ -39,7 +39,7 @@ def ai_options(user_spaces, opts, in_use, ai_choice):
         for item in opts:
             if item not in occupied_spaces:
                 ai_choice.append(20 + item)
-    
+
 
 def board_analysis(in_use_by_user, in_use):
     col1 = [1, 4, 7]
@@ -132,7 +132,7 @@ def end_game(ai_choice, stdscr, players=1):
             stdscr.addstr(0, 0, "           You lose")
         stdscr.refresh()
         return True
-    return False 
+    return False
 
 
 def user_turn(stdscr, in_use, in_use_by_user, available, player_one=True):
@@ -143,7 +143,7 @@ def user_turn(stdscr, in_use, in_use_by_user, available, player_one=True):
         stdscr.refresh()
         stdscr.clrtoeol()
         try:
-            usr_input = stdscr.getstr(7, 19)[0]
+            usr_input = stdscr.getstr(7, 19).decode("utf-8")[0]
             next_move = int(usr_input)
             if next_move != 0 and next_move not in in_use:
                 stdscr.clrtoeol()
@@ -180,8 +180,7 @@ def ai_turn(stdscr, in_use, in_use_by_user, available):
         if len(finishing_moves) > 0:
             next_move = random.choice(finishing_moves)
         elif len(defending_moves) > 0:
-            strategic_defend = [x for x in defending_moves if
-                                x in attacking_moves]
+            strategic_defend = [x for x in defending_moves if x in attacking_moves]
             if len(strategic_defend) > 0:
                 next_move = random.choice(defending_moves)
             else:
@@ -211,22 +210,20 @@ def play(number_of_players):
 
     try:
         for i in range(9):
-
             # Player 1 turn
             if i % 2 == 0:
                 turn = "X"
-                next_move = user_turn(stdscr, in_use, in_use_by_user,
-                                      available)
+                next_move = user_turn(stdscr, in_use, in_use_by_user, available)
 
             # Player 2 turn
             else:
                 turn = "O"
                 if number_of_players == 2:
-                    next_move = user_turn(stdscr, in_use, in_use_by_user,
-                                          available, False)
+                    next_move = user_turn(
+                        stdscr, in_use, in_use_by_user, available, False
+                    )
                 else:
-                    next_move = ai_turn(stdscr, in_use, in_use_by_user,
-                                        available)
+                    next_move = ai_turn(stdscr, in_use, in_use_by_user, available)
                     if next_move == 0:
                         break
 
@@ -245,7 +242,7 @@ def play(number_of_players):
         stdscr.addstr(7, 0, "Would you like to play again? (y/n) ")
         stdscr.refresh()
         stdscr.clrtoeol()
-        continue_playing_input = stdscr.getstr(7, 37)[0]
+        continue_playing_input = stdscr.getstr(7, 37).decode("utf-8")[0]
 
         if continue_playing_input != "y":
             continue_playing = False
@@ -260,12 +257,12 @@ def play(number_of_players):
         curses.nocbreak()
         curses.endwin()
 
-    print "Thank you for playing"
+    print("Thank you for playing")
     return continue_playing
 
 
 if __name__ == "__main__":
-    total_players = int(raw_input("1 or 2 players? "))
+    total_players = int(input("1 or 2 players? "))
     play_again = True
     while play_again:
         play_again = play(total_players)
